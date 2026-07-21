@@ -10,7 +10,7 @@ import { toast } from '@/components/ui/toast';
 export default function Login() {
   const settings = useSettings();
   const login = useAuthStore((s) => s.login);
-  const [tab, setTab] = useState('admin'); // 'admin' | 'viewer'
+  const [tab, setTab] = useState('viewer'); // 'admin' | 'viewer'
   const [pin, setPin] = useState('');
   const [showPin, setShowPin] = useState(false);
   const [remember, setRemember] = useState(true);
@@ -73,17 +73,6 @@ export default function Login() {
           <div className="mb-5 flex gap-1 rounded-xl bg-paper-dim p-1">
             <button
               onClick={() => {
-                setTab('admin');
-                setError('');
-              }}
-              className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-colors ${
-                tab === 'admin' ? 'bg-white text-brand-700 shadow-soft' : 'text-ink-soft'
-              }`}
-            >
-              Admin
-            </button>
-            <button
-              onClick={() => {
                 setTab('viewer');
                 setError('');
               }}
@@ -92,6 +81,17 @@ export default function Login() {
               }`}
             >
               Viewer
+            </button>
+            <button
+              onClick={() => {
+                setTab('admin');
+                setError('');
+              }}
+              className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-colors ${
+                tab === 'admin' ? 'bg-white text-brand-700 shadow-soft' : 'text-ink-soft'
+              }`}
+            >
+              Admin
             </button>
           </div>
 
