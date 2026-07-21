@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background-color: #CDE6DE;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Larger tap targets on touch devices */
+button, a, input, select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Focus visibility */
+:focus-visible {
+  outline: 2px solid #0F6B5C;
+  outline-offset: 2px;
+}
+
+@media print {
+  nav, header { display: none !important; }
+  body { background: white; }
+}
+
+/* Lightweight dark mode: remaps the light-theme utility classes rather than
+   requiring dark: variants on every component. Applied when <html> has .dark
+   (toggled from Settings → Appearance). */
+.dark body,
+.dark {
+  background-color: #12181A;
+  color: #F1F0E9;
+}
+.dark .bg-paper { background-color: #12181A; }
+.dark .bg-paper\/90 { background-color: rgba(18, 24, 26, 0.9); }
+.dark .bg-paper-dim,
+.dark .bg-paper-dim\/60,
+.dark .bg-paper-dim\/50 { background-color: #1C2521; }
+.dark .bg-white { background-color: #1B2422; }
+.dark .border-line,
+.dark .border-line\/70 { border-color: #2A342F; }
+.dark .text-ink { color: #F1F0E9; }
+.dark .text-ink-soft,
+.dark .text-ink-soft\/70,
+.dark .text-ink-soft\/80 { color: #9CAAA3; }
+.dark .shadow-soft { box-shadow: 0 2px 10px -2px rgba(0,0,0,0.4); }
