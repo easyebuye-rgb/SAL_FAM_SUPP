@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Menu } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Menu, LogOut } from 'lucide-react';
 import { useAuthStore } from '@/store/uiStore';
 import { RecentActivityDrawer } from '@/components/layout/RecentActivityDrawer';
+import { ConfirmDialog } from '@/components/ui/overlay';
 
 export function PageHeader({ eyebrow, title, action }) {
   const navigate = useNavigate();
   const location = useLocation();
   const role = useAuthStore((s) => s.role);
+  const logout = useAuthStore((s) => s.logout);
   const [showActivity, setShowActivity] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const isHome = location.pathname === '/';
 
   return (
@@ -33,15 +36,24 @@ export function PageHeader({ eyebrow, title, action }) {
               <RefreshCw size={16} />
             </button>
           </div>
-          {role === 'admin' && (
+          <div className="flex items-center gap-1">
+            {role === 'admin' && (
+              <button
+                onClick={() => setShowActivity(true)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-soft hover:bg-paper-dim"
+                aria-label="Recent viewer activity"
+              >
+                <Menu size={18} />
+              </button>
+            )}
             <button
-              onClick={() => setShowActivity(true)}
+              onClick={() => setShowLogoutConfirm(true)}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-soft hover:bg-paper-dim"
-              aria-label="Recent viewer activity"
+              aria-label="Back to login screen"
             >
-              <Menu size={18} />
+              <LogOut size={17} />
             </button>
-          )}
+          </div>
         </div>
         <div className="flex items-end justify-between">
           <div>
@@ -53,6 +65,21 @@ export function PageHeader({ eyebrow, title, action }) {
       </div>
       <div className="absolute inset-x-0 -bottom-px h-[3px] bg-gradient-to-r from-brand-500 via-brand-400 to-gold-400 opacity-70" />
       <RecentActivityDrawer open={showActivity} onClose={() => setShowActivity(false)} />
+      <ConfirmDialog
+        open={showLogoutConfirm}
+        title="Back to login screen"
+        description={
+          role === 'admin'
+            ? "You'll need to enter the admin PIN again to get back in."
+            : "You'll need to enter your name again to continue as a viewer."
+        }
+        confirmLabel="Continue"
+        onConfirm={() => {
+          logout();
+          setShowLogoutConfirm(false);
+        }}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </header>
   );
 }
