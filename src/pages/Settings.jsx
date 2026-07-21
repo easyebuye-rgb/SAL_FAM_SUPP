@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Download, Upload, LogOut, Moon, Sun, Info, KeyRound, Plus, Pencil, Trash2, Wallet } from 'lucide-react';
+import { Download, Upload, LogOut, Moon, Sun, Info, KeyRound, Plus, Pencil, Trash2, Wallet, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { ConfirmDialog } from '@/components/ui/overlay';
 import { db, hashPassword, supabase } from '@/lib/db';
 import { seedSampleData } from '@/lib/seed';
 import { useSettings, useBalanceAdjustments } from '@/hooks/useData';
+import { useSyncStatus } from '@/hooks/useSyncStatus';
 import { useAuthStore, useUIStore } from '@/store/uiStore';
 import { settingsSchema, passwordChangeSchema } from '@/lib/validators';
 import { toast } from '@/components/ui/toast';
@@ -18,6 +19,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 
 export default function Settings() {
   const settings = useSettings();
+  const { status: syncStatus, lastConnected, checkNow } = useSyncStatus();
   const adjustments = useBalanceAdjustments();
   const logout = useAuthStore((s) => s.logout);
   const { theme, setTheme } = useUIStore();
@@ -122,6 +124,53 @@ export default function Settings() {
     <div className="pb-24">
       <PageHeader eyebrow="Configuration" title="Settings" />
       <div className="mx-auto max-w-2xl space-y-5 px-5 py-5">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Sync Status</CardTitle>
+            <button
+              onClick={checkNow}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-soft/60 hover:bg-paper-dim"
+              aria-label="Check connection now"
+            >
+              <RefreshCw size={15} />
+            </button>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-3">
+              <div
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                  syncStatus === 'connected'
+                    ? 'bg-brand-50 text-brand-600'
+                    : syncStatus === 'offline'
+                      ? 'bg-red-50 text-red-600'
+                      : 'bg-gold-50 text-gold-600'
+                }`}
+              >
+                {syncStatus === 'offline' ? <WifiOff size={18} /> : <Wifi size={18} />}
+              </div>
+              <div>
+                <p className="flex items-center gap-1.5 text-sm font-medium text-ink">
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      syncStatus === 'connected' ? 'bg-brand-500' : syncStatus === 'offline' ? 'bg-red-500' : 'bg-gold-500 animate-pulse'
+                    }`}
+                  />
+                  {syncStatus === 'connected' && 'Connected — synced live'}
+                  {syncStatus === 'connecting' && 'Connecting…'}
+                  {syncStatus === 'offline' && 'Offline — not syncing'}
+                </p>
+                <p className="mt-0.5 text-xs text-ink-soft">
+                  {syncStatus === 'offline'
+                    ? "Changes made now won't reach Supabase until this device reconnects."
+                    : lastConnected
+                      ? `Last confirmed ${lastConnected.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`
+                      : 'Checking connection to Supabase…'}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Application</CardTitle>

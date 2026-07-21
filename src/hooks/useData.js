@@ -12,9 +12,40 @@ const POSTGRES_TABLE_NAMES = {
   settings: 'app_settings'
 };
 
+// One real Supabase Realtime channel per table for the whole app, shared by
+// every component watching that table — instead of each component opening
+// its own connection (wasteful, and the root cause of an earlier bug where
+// duplicate channel names collided). Whoever subscribes first opens the
+// channel; whoever unsubscribes last closes it.
+const tableSubscriptions = new Map();
+
+function subscribeToTable(dbTableName, onChange) {
+  let entry = tableSubscriptions.get(dbTableName);
+  if (!entry) {
+    const listeners = new Set();
+    const channel = supabase
+      .channel(`shared:${dbTableName}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: dbTableName }, () => {
+        listeners.forEach((fn) => fn());
+      })
+      .subscribe();
+    entry = { channel, listeners };
+    tableSubscriptions.set(dbTableName, entry);
+  }
+  entry.listeners.add(onChange);
+  return () => {
+    entry.listeners.delete(onChange);
+    if (entry.listeners.size === 0) {
+      supabase.removeChannel(entry.channel);
+      tableSubscriptions.delete(dbTableName);
+    }
+  };
+}
+
 // Fetches a table once, then re-fetches automatically whenever any row in
 // that table changes (insert/update/delete) — by anyone, on any device —
-// via a Supabase Realtime subscription. This replaces Dexie's useLiveQuery.
+// via a shared Supabase Realtime subscription. This replaces Dexie's
+// useLiveQuery.
 function useSupabaseTable(tableName, sortFn) {
   const [rows, setRows] = useState([]);
 
@@ -27,13 +58,8 @@ function useSupabaseTable(tableName, sortFn) {
   useEffect(() => {
     fetchRows();
     const dbTableName = POSTGRES_TABLE_NAMES[tableName];
-    const channel = supabase
-      .channel(`realtime:${dbTableName}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: dbTableName }, fetchRows)
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    const unsubscribe = subscribeToTable(dbTableName, fetchRows);
+    return unsubscribe;
   }, [fetchRows, tableName]);
 
   return rows;
