@@ -8,21 +8,25 @@ export function ContributorSummaryList({ summaries, currency }) {
       <Card className="flex items-start gap-2 p-3.5 text-xs text-ink-soft">
         <Users size={15} className="mt-0.5 shrink-0 text-brand-500" />
         <span>
-          Sorted A–Z. "Paid until" is the furthest month their payments reach. Rows in red are due — not yet paid through
-          the current month.
+          Sorted A–Z. "Paid until" is the furthest month their payments reach. Red rows are due. Names marked (OTS) or
+          (Stopped) are shown faded instead — they're never counted as due.
         </span>
       </Card>
       {summaries.length === 0 && <Card className="p-8 text-center text-sm text-ink-soft">No contributions recorded yet.</Card>}
       {summaries.map((s) => (
         <Card
           key={s.contributorId}
-          className={cn('flex items-center justify-between p-4', s.isDue && 'border-red-200 bg-red-50/60')}
+          className={cn(
+            'flex items-center justify-between p-4',
+            s.isDue && 'border-red-200 bg-red-50/60',
+            s.isExempt && 'opacity-55'
+          )}
         >
           <div className="flex items-center gap-3">
             <div
               className={cn(
                 'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
-                s.isDue ? 'bg-white text-red-600' : 'bg-brand-50 text-brand-600'
+                s.isDue ? 'bg-white text-red-600' : s.isExempt ? 'bg-paper-dim text-ink-soft' : 'bg-brand-50 text-brand-600'
               )}
             >
               {s.name.charAt(0).toUpperCase()}

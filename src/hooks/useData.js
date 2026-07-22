@@ -203,7 +203,8 @@ export function useContributorSummaries() {
   return Array.from(map.values())
     .map((entry) => {
       const coveredKey = entry.lastCoveredMonth != null ? entry.lastCoveredYear * 12 + entry.lastCoveredMonth : -Infinity;
-      return { ...entry, isDue: coveredKey < thisMonthKey };
+      const isExempt = /\((ots|stopped)\)/i.test(entry.name);
+      return { ...entry, isDue: !isExempt && coveredKey < thisMonthKey, isExempt };
     })
     .sort((a, b) => a.name.localeCompare(b.name));
 }
