@@ -206,5 +206,5 @@ export function useContributorSummaries() {
       const isExempt = /\((ots|stopped)\)/i.test(entry.name);
       return { ...entry, isDue: !isExempt && coveredKey < thisMonthKey, isExempt };
     })
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => (a.isExempt === b.isExempt ? a.name.localeCompare(b.name) : a.isExempt ? 1 : -1));
 }
