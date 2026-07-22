@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase, db } from '@/lib/db';
+import { currentMonth, currentYear } from '@/lib/utils';
 
 // Must mirror the table names used inside db.js exactly.
 const POSTGRES_TABLE_NAMES = {
@@ -152,6 +153,10 @@ export function useContributorSummaries() {
   const collectionMonths = useCollectionMonths();
 
   const monthsByCollectionId = new Map();
+  const contributorIdByCollectionId = new Map();
+  (collections ?? []).forEach((c) => {
+    contributorIdByCollectionId.set(c.id, c.contributorId);
+  });
   (collectionMonths ?? []).forEach((cm) => {
     monthsByCollectionId.set(cm.collectionId, (monthsByCollectionId.get(cm.collectionId) ?? 0) + 1);
   });
@@ -159,7 +164,16 @@ export function useContributorSummaries() {
   const map = new Map();
   (contributors ?? []).forEach((c) => {
     if (!c.id) return;
-    map.set(c.id, { contributorId: c.id, name: c.name, totalAmount: 0, monthsCovered: 0, paymentCount: 0, lastPaymentDate: '' });
+    map.set(c.id, {
+      contributorId: c.id,
+      name: c.name,
+      totalAmount: 0,
+      monthsCovered: 0,
+      paymentCount: 0,
+      lastPaymentDate: '',
+      lastCoveredMonth: null,
+      lastCoveredYear: null
+    });
   });
 
   (collections ?? []).forEach((c) => {
@@ -171,5 +185,25 @@ export function useContributorSummaries() {
     if (!entry.lastPaymentDate || c.paymentDate > entry.lastPaymentDate) entry.lastPaymentDate = c.paymentDate;
   });
 
-  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  // The furthest month/year each contributor's payments reach — not just a
+  // count, since months covered can be non-consecutive.
+  (collectionMonths ?? []).forEach((cm) => {
+    const contributorId = contributorIdByCollectionId.get(cm.collectionId);
+    const entry = map.get(contributorId);
+    if (!entry) return;
+    const key = cm.year * 12 + cm.month;
+    const currentKey = entry.lastCoveredYear != null ? entry.lastCoveredYear * 12 + entry.lastCoveredMonth : -Infinity;
+    if (key > currentKey) {
+      entry.lastCoveredMonth = cm.month;
+      entry.lastCoveredYear = cm.year;
+    }
+  });
+
+  const thisMonthKey = currentYear() * 12 + currentMonth();
+  return Array.from(map.values())
+    .map((entry) => {
+      const coveredKey = entry.lastCoveredMonth != null ? entry.lastCoveredYear * 12 + entry.lastCoveredMonth : -Infinity;
+      return { ...entry, isDue: coveredKey < thisMonthKey };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
